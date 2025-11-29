@@ -7,22 +7,9 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header class="hero">
-        <div class="wrapper hero__content">
-            <p class="eyebrow">Transportation Systems • Bangkok, Thailand</p>
-            <h1>Dr. Mongkut Piantanakulchai</h1>
-            <p class="lead">Professor of transportation engineering specializing in data-driven bus network optimization, multi-criteria decision analysis, and resilient urban mobility.</p>
-            <div class="hero__meta">
-                <span>School of Engineering &amp; Technology</span>
-                <span>Advisor | Transportation Systems Laboratory</span>
-            </div>
-            <a class="btn" href="#contact">Connect with Dr. Mongkut</a>
-        </div>
-    </header>
-
-    <nav class="top-nav" aria-label="Primary">
-        <div class="wrapper">
-            <a class="brand" href="#top">MP</a>
+    <div class="layout">
+        <nav class="side-nav" aria-label="Floating navigation">
+            <a class="side-nav__brand" href="#top">MP</a>
             <ul>
                 <li><a href="#about">About</a></li>
                 <li><a href="#research">Research</a></li>
@@ -31,133 +18,232 @@
                 <li><a href="#teaching">Teaching</a></li>
                 <li><a href="#contact">Contact</a></li>
             </ul>
+        </nav>
+
+        <div class="content">
+            <header id="top" class="hero">
+                <div class="hero__pattern" aria-hidden="true"></div>
+                <div class="wrapper hero__grid">
+                    <div class="hero__text">
+                        <p class="eyebrow">Transportation Systems • Bangkok, Thailand</p>
+                        <h1>Dr. Mongkut Piantanakulchai</h1>
+                        <p class="lead">Professor of transportation engineering specializing in data-driven bus network optimization, multi-criteria decision analysis, and resilient urban mobility.</p>
+                        <div class="hero__meta">
+                            <span>School of Engineering &amp; Technology</span>
+                            <span>Advisor | Transportation Systems Laboratory</span>
+                        </div>
+                        <div class="hero__cta">
+                            <a class="btn" href="#contact">Collaborate</a>
+                            <a class="btn ghost" href="#publications">View Research</a>
+                        </div>
+                    </div>
+                    <div class="profile-cards">
+                        <article class="profile-card">
+                            <div class="profile-card__icon" aria-hidden="true">
+                                <svg viewBox="0 0 64 64" role="img"><path d="M8 48l8-16 10 12 12-20 18 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="48" r="4"/><circle cx="26" cy="44" r="4"/><circle cx="40" cy="24" r="4"/><circle cx="52" cy="48" r="4"/></svg>
+                            </div>
+                            <h3>Systems Thinking</h3>
+                            <p>Links policy goals with performance dashboards for metropolitan bus corridors.</p>
+                        </article>
+                        <article class="profile-card">
+                            <div class="profile-card__icon" aria-hidden="true">
+                                <svg viewBox="0 0 64 64" role="img"><path d="M12 44h40M32 20v24M20 28h8M36 32h8" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><rect x="10" y="14" width="44" height="32" rx="4" ry="4" stroke="currentColor" stroke-width="4" fill="none"/></svg>
+                            </div>
+                            <h3>Data Stewardship</h3>
+                            <p>Combines GTFS, AVL, and survey data to guide responsive rerouting decisions.</p>
+                        </article>
+                        <article class="profile-card">
+                            <div class="profile-card__icon" aria-hidden="true">
+                                <svg viewBox="0 0 64 64" role="img"><path d="M12 38c8 0 8-12 16-12s8 12 16 12 8-12 16-12" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><circle cx="24" cy="18" r="6"/><circle cx="40" cy="14" r="6"/></svg>
+                            </div>
+                            <h3>Collaborative Leadership</h3>
+                            <p>Facilitates co-design workshops with agencies and communities across Thailand.</p>
+                        </article>
+                    </div>
+                </div>
+            </header>
+
+            <main>
+                <section id="about" class="section">
+                    <div class="section__header">
+                        <div class="section__icon" aria-hidden="true">
+                            <svg viewBox="0 0 48 48"><path d="M6 34h36l-8-18H14z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><circle cx="18" cy="14" r="4"/><circle cx="30" cy="12" r="4"/></svg>
+                        </div>
+                        <div>
+                            <h2>About Me</h2>
+                            <p>Advancing equitable transportation systems through rigorous methodology and engaged scholarship.</p>
+                        </div>
+                    </div>
+                    <div class="grid grid--two">
+                        <p>Dr. Mongkut Piantanakulchai is a transportation researcher and professor based in Thailand whose work integrates systems thinking, operations research, and field-based evidence. His scholarship centers on designing reliable bus services for rapidly growing cities and guiding public agencies toward measurable performance outcomes.</p>
+                        <ul class="highlight-list">
+                            <li>Expertise in transportation systems analysis and network design.</li>
+                            <li>Specialist in bus network optimization and rerouting strategies.</li>
+                            <li>Methodological focus on multi-criteria decision making, discrete choice modeling, and participatory research design.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section id="research" class="section">
+                    <div class="section__header">
+                        <div class="section__icon" aria-hidden="true">
+                            <svg viewBox="0 0 48 48"><path d="M8 34c8-8 24-8 32 0M8 14c8 8 24 8 32 0" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="12" cy="12" r="4"/><circle cx="36" cy="36" r="4"/></svg>
+                        </div>
+                        <div>
+                            <h2>Research Interests</h2>
+                            <p>Connecting geospatial analytics with technology acceptance to inform people-centered mobility policy.</p>
+                        </div>
+                    </div>
+                    <div class="card-grid">
+                        <article class="card">
+                            <h3>Transportation Planning</h3>
+                            <p>Scenario planning for metropolitan bus and rail integration, emphasizing performance monitoring frameworks.</p>
+                        </article>
+                        <article class="card">
+                            <h3>Bus Rerouting</h3>
+                            <p>Dynamic rerouting algorithms that balance coverage, equity, and carbon reduction goals.</p>
+                        </article>
+                        <article class="card">
+                            <h3>Geospatial Analysis</h3>
+                            <p>High-resolution spatial analytics combining GTFS feeds, smart-card data, and remote sensing layers.</p>
+                        </article>
+                        <article class="card">
+                            <h3>Technology Acceptance</h3>
+                            <p>Behavioral modeling of traveler adoption of digital ticketing, real-time information, and MaaS platforms.</p>
+                        </article>
+                    </div>
+                </section>
+
+                <section id="projects" class="section">
+                    <div class="section__header">
+                        <div class="section__icon" aria-hidden="true">
+                            <svg viewBox="0 0 48 48"><path d="M6 38l12-28 12 12 12-8" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+                        </div>
+                        <div>
+                            <h2>Current Projects</h2>
+                            <p>Collaborative research translating theory into actionable policy guidance for Thai transit agencies.</p>
+                        </div>
+                    </div>
+                    <div class="timeline">
+                        <article class="timeline__item">
+                            <div class="timeline__badge">2024</div>
+                            <div class="timeline__card">
+                                <div class="map-thumb" aria-hidden="true"></div>
+                                <div>
+                                    <p class="eyebrow">Flagship Study</p>
+                                    <h3>PTSE-Bus Rerouting Project</h3>
+                                    <p>The PTSE initiative develops a decision-support environment for Bangkok's city bus services, optimizing route restructuring while maintaining neighborhood accessibility. The project blends field surveys, AVL feeds, and stakeholder co-design workshops to produce adaptable rerouting playbooks for municipal operators.</p>
+                                    <ul>
+                                        <li>Integrates demand forecasting with operational constraints across 40+ corridors.</li>
+                                        <li>Deploys geospatial dashboards for real-time evaluation of service adjustments.</li>
+                                        <li>Provides policy briefs for the Ministry of Transport and metropolitan transit authorities.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <section id="publications" class="section">
+                    <div class="section__header">
+                        <div class="section__icon" aria-hidden="true">
+                            <svg viewBox="0 0 48 48"><path d="M12 10h24v28H12z" fill="none" stroke="currentColor" stroke-width="3"/><path d="M12 18h24" stroke="currentColor" stroke-width="3"/></svg>
+                        </div>
+                        <div>
+                            <h2>Selected Publications</h2>
+                            <p>Representative peer-reviewed work and outreach reports supporting data-driven transit policy.</p>
+                        </div>
+                    </div>
+                    <ol class="publication-list">
+                        <li><strong>Piantanakulchai, M.</strong> (2024). "Multi-Criteria Bus Network Redesign for Climate-Positive Corridors." <em>Journal of Transportation Systems Engineering</em>, 50(2), 115-134.</li>
+                        <li><strong>Piantanakulchai, M.</strong>, &amp; colleagues (2023). "Technology Acceptance of Integrated Fare Platforms in Emerging Transit Markets." <em>International Journal of Sustainable Transportation</em>, 17(9), 721-738.</li>
+                        <li><strong>Piantanakulchai, M.</strong> (2022). "Geospatial Diagnostics for Equitable Bus Service Allocation." <em>Urban Mobility Review</em>, 14(3), 201-220.</li>
+                    </ol>
+                </section>
+
+                <section id="teaching" class="section">
+                    <div class="section__header">
+                        <div class="section__icon" aria-hidden="true">
+                            <svg viewBox="0 0 48 48"><path d="M6 18l18-8 18 8-18 8-18-8v12" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M30 22v10" stroke="currentColor" stroke-width="3"/></svg>
+                        </div>
+                        <div>
+                            <h2>Teaching &amp; Mentoring</h2>
+                            <p>Graduate and professional courses emphasizing analytical rigor and real-world collaboration.</p>
+                        </div>
+                    </div>
+                    <div class="grid grid--two teaching">
+                        <div>
+                            <h3>Courses</h3>
+                            <ul>
+                                <li>Advanced Transportation Systems Analysis</li>
+                                <li>Public Transit Planning &amp; Operations</li>
+                                <li>Geospatial Analytics for Infrastructure Decisions</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3>Mentorship</h3>
+                            <p>Advises master’s and doctoral candidates on topics spanning bus reliability modeling, technology acceptance for mobility apps, and equity-centered evaluation frameworks. Leads practitioner workshops for transit agencies across Thailand.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="contact" class="section">
+                    <div class="section__header">
+                        <div class="section__icon" aria-hidden="true">
+                            <svg viewBox="0 0 48 48"><path d="M6 12l18 12 18-12v24H6z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg>
+                        </div>
+                        <div>
+                            <h2>Contact</h2>
+                            <p>Collaboration inquiries, student supervision requests, and speaking engagements are welcome.</p>
+                        </div>
+                    </div>
+                    <div class="contact-grid">
+                        <article>
+                            <p class="eyebrow">Email</p>
+                            <a href="mailto:research@mongkutlab.org">research@mongkutlab.org</a>
+                        </article>
+                        <article>
+                            <p class="eyebrow">Office</p>
+                            <p>Transportation Systems Laboratory, Bangkok, Thailand</p>
+                        </article>
+                        <article>
+                            <p class="eyebrow">LinkedIn</p>
+                            <a href="https://www.linkedin.com" target="_blank" rel="noopener">linkedin.com/in/mongkut-piantanakulchai</a>
+                        </article>
+                    </div>
+                </section>
+            </main>
+
+            <footer>
+                <div class="wrapper footer__grid">
+                    <p>&copy; <span id="year"></span> Dr. Mongkut Piantanakulchai. All rights reserved.</p>
+                    <div class="footer__social">
+                        <a href="mailto:research@mongkutlab.org" aria-label="Email">
+                            <svg viewBox="0 0 24 24" role="img"><path d="M3 5h18v14H3z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 7l9 6 9-6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                        </a>
+                        <a href="https://github.com" target="_blank" rel="noopener" aria-label="GitHub">
+                            <svg viewBox="0 0 24 24" role="img"><path d="M12 .5C5.73.5.5 5.74.5 12.02a11.5 11.5 0 008 10.94c.58.11.79-.25.79-.55v-2c-3.26.71-3.95-1.58-3.95-1.58-.52-1.32-1.27-1.67-1.27-1.67-1.04-.72.08-.71.08-.71 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.68 1.25 3.33.95.1-.74.4-1.25.72-1.54-2.6-.3-5.34-1.33-5.34-5.93 0-1.31.46-2.38 1.2-3.22-.12-.3-.53-1.52.11-3.17 0 0 .99-.32 3.24 1.23a11.18 11.18 0 015.9 0c2.25-1.55 3.23-1.23 3.23-1.23.64 1.65.23 2.86.11 3.17.75.84 1.19 1.91 1.19 3.22 0 4.61-2.75 5.62-5.37 5.92.41.35.77 1.03.77 2.08v3.08c0 .3.21.66.8.55a11.5 11.5 0 008-10.94C23.5 5.74 18.27.5 12 .5z"/></svg>
+                        </a>
+                        <a href="https://www.linkedin.com" target="_blank" rel="noopener" aria-label="LinkedIn">
+                            <svg viewBox="0 0 24 24" role="img"><path d="M4.5 9h3v11h-3zM6 4a1.75 1.75 0 110 3.5A1.75 1.75 0 016 4zM10 9h2.8v1.7h.04c.39-.74 1.36-1.52 2.79-1.52 2.98 0 3.54 1.96 3.54 4.5V20h-3v-5.1c0-1.22-.03-2.79-1.7-2.79-1.7 0-1.96 1.33-1.96 2.7V20H10z"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </footer>
         </div>
-    </nav>
-
-    <main class="wrapper">
-        <section id="about" class="section">
-            <div class="section__header">
-                <h2>About Me</h2>
-                <p>Advancing equitable transportation systems through rigorous methodology and engaged scholarship.</p>
-            </div>
-            <div class="grid grid--two">
-                <p>Dr. Mongkut Piantanakulchai is a transportation researcher and professor based in Thailand whose work integrates systems thinking, operations research, and field-based evidence. His scholarship centers on designing reliable bus services for rapidly growing cities and guiding public agencies toward measurable performance outcomes.</p>
-                <ul class="highlight-list">
-                    <li>Expertise in transportation systems analysis and network design.</li>
-                    <li>Specialist in bus network optimization and rerouting strategies.</li>
-                    <li>Methodological focus on multi-criteria decision making, discrete choice modeling, and participatory research design.</li>
-                </ul>
-            </div>
-        </section>
-
-        <section id="research" class="section">
-            <div class="section__header">
-                <h2>Research Interests</h2>
-                <p>Connecting geospatial analytics with technology acceptance to inform people-centered mobility policy.</p>
-            </div>
-            <div class="card-grid">
-                <article class="card">
-                    <h3>Transportation Planning</h3>
-                    <p>Scenario planning for metropolitan bus and rail integration, emphasizing performance monitoring frameworks.</p>
-                </article>
-                <article class="card">
-                    <h3>Bus Rerouting</h3>
-                    <p>Dynamic rerouting algorithms that balance coverage, equity, and carbon reduction goals.</p>
-                </article>
-                <article class="card">
-                    <h3>Geospatial Analysis</h3>
-                    <p>High-resolution spatial analytics combining GTFS feeds, smart-card data, and remote sensing layers.</p>
-                </article>
-                <article class="card">
-                    <h3>Technology Acceptance</h3>
-                    <p>Behavioral modeling of traveler adoption of digital ticketing, real-time information, and MaaS platforms.</p>
-                </article>
-            </div>
-        </section>
-
-        <section id="projects" class="section">
-            <div class="section__header">
-                <h2>Current Projects</h2>
-                <p>Collaborative research translating theory into actionable policy guidance for Thai transit agencies.</p>
-            </div>
-            <article class="project">
-                <div>
-                    <p class="eyebrow">Flagship Study</p>
-                    <h3>PTSE-Bus Rerouting Project</h3>
-                    <p>The PTSE initiative develops a decision-support environment for Bangkok's city bus services, optimizing route restructuring while maintaining neighborhood accessibility. The project blends field surveys, AVL feeds, and stakeholder co-design workshops to produce adaptable rerouting playbooks for municipal operators.</p>
-                </div>
-                <ul>
-                    <li>Integrates demand forecasting with operational constraints across 40+ corridors.</li>
-                    <li>Deploys geospatial dashboards for real-time evaluation of service adjustments.</li>
-                    <li>Provides policy briefs for the Ministry of Transport and metropolitan transit authorities.</li>
-                </ul>
-            </article>
-        </section>
-
-        <section id="publications" class="section">
-            <div class="section__header">
-                <h2>Selected Publications</h2>
-                <p>Representative peer-reviewed work and outreach reports supporting data-driven transit policy.</p>
-            </div>
-            <ol class="publication-list">
-                <li><strong>Piantanakulchai, M.</strong> (2024). "Multi-Criteria Bus Network Redesign for Climate-Positive Corridors." <em>Journal of Transportation Systems Engineering</em>, 50(2), 115-134.</li>
-                <li><strong>Piantanakulchai, M.</strong>, &amp; colleagues (2023). "Technology Acceptance of Integrated Fare Platforms in Emerging Transit Markets." <em>International Journal of Sustainable Transportation</em>, 17(9), 721-738.</li>
-                <li><strong>Piantanakulchai, M.</strong> (2022). "Geospatial Diagnostics for Equitable Bus Service Allocation." <em>Urban Mobility Review</em>, 14(3), 201-220.</li>
-            </ol>
-        </section>
-
-        <section id="teaching" class="section">
-            <div class="section__header">
-                <h2>Teaching &amp; Mentoring</h2>
-                <p>Graduate and professional courses emphasizing analytical rigor and real-world collaboration.</p>
-            </div>
-            <div class="grid grid--two">
-                <div>
-                    <h3>Courses</h3>
-                    <ul>
-                        <li>Advanced Transportation Systems Analysis</li>
-                        <li>Public Transit Planning &amp; Operations</li>
-                        <li>Geospatial Analytics for Infrastructure Decisions</li>
-                    </ul>
-                </div>
-                <div>
-                    <h3>Mentorship</h3>
-                    <p>Advises master’s and doctoral candidates on topics spanning bus reliability modeling, technology acceptance for mobility apps, and equity-centered evaluation frameworks. Leads practitioner workshops for transit agencies across Thailand.</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="contact" class="section">
-            <div class="section__header">
-                <h2>Contact</h2>
-                <p>Collaboration inquiries, student supervision requests, and speaking engagements are welcome.</p>
-            </div>
-            <div class="contact">
-                <div>
-                    <p class="eyebrow">Email</p>
-                    <a href="mailto:research@mongkutlab.org">research@mongkutlab.org</a>
-                </div>
-                <div>
-                    <p class="eyebrow">Office</p>
-                    <p>Transportation Systems Laboratory, Bangkok, Thailand</p>
-                </div>
-                <div>
-                    <p class="eyebrow">LinkedIn</p>
-                    <a href="https://www.linkedin.com" target="_blank" rel="noopener">linkedin.com/in/mongkut-piantanakulchai</a>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer>
-        <div class="wrapper">
-            <p>&copy; <span id="year"></span> Dr. Mongkut Piantanakulchai. All rights reserved.</p>
-        </div>
-    </footer>
+    </div>
 
     <script>
         const yearSpan = document.getElementById('year');
         yearSpan.textContent = new Date().getFullYear();
+
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                entry.target.classList.toggle('in-view', entry.isIntersecting);
+            });
+        }, { threshold: 0.2 });
+
+        document.querySelectorAll('.section').forEach(section => observer.observe(section));
     </script>
 </body>
 </html>
