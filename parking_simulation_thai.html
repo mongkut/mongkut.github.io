@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แดชบอร์ดจำลองจุดจอดรถ (M/M/s & M/D/s)</title>
+    
+    <!-- Tailwind CSS for UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for Visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Custom Scrollbar for Sidebar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .card { background: white; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1rem; }
+        .input-group label { display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.25rem; }
+        .input-group input, .input-group select { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem; }
+        .btn { padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background-color: #2563eb; color: white; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        .btn-secondary { background-color: #4b5563; color: white; }
+        .btn-secondary:hover { background-color: #374151; }
+        .btn-success { background-color: #059669; color: white; }
+        .btn-outline { border: 1px solid #d1d5db; background: white; color: #374151; }
+        .btn-outline:hover { background-color: #f3f4f6; }
+        .btn-visual { background-color: #7c3aed; color: white; } /* Purple for Visual */
+        .btn-visual:hover { background-color: #6d28d9; }
+
+        /* Loader */
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 5px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <!-- Sidebar: Inputs -->
+    <aside class="w-80 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col h-full overflow-y-auto z-10">
+        <div class="p-4 border-b border-gray-200 bg-gray-50">
+            <h1 class="text-xl font-bold text-gray-800">จำลองจุดจอดรถ</h1>
+            <p class="text-xs text-gray-500 mt-1">แบบจำลองเหตุการณ์ไม่ต่อเนื่อง (DES)</p>
+        </div>
+
+        <div class="p-4 space-y-4 flex-1">
+            
+            <!-- Traffic Parameters -->
+            <div>
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">การจราจรและการบริการ</h3>
+                <div class="space-y-3">
+                    <div class="input-group">
+                        <label title="Arrival Rate (Lambda)">อัตราการมาถึง (คัน/ชม.)</label>
+                        <input type="number" id="arrival_rate" value="300" min="0" max="2000">
+                    </div>
+                    <div class="input-group">
+                        <label title="Mean Service Time (1/Mu)">เวลาจอดเฉลี่ย (วินาที)</label>
+                        <input type="number" id="dwell_time" value="30" min="1">
+                    </div>
+                    <div class="input-group">
+                        <label>รูปแบบการกระจายตัว</label>
+                        <select id="service_dist">
+                            <option value="exponential">เอกซ์โพเนนเชียล (M/M/s)</option>
+                            <option value="fixed">คงที่ (M/D/s)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Capacity -->
+            <div>
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">ความจุของระบบ</h3>
+                <div class="space-y-3">
+                    <div class="input-group">
+                        <label title="Number of Servers (s)">จำนวนช่องจอด (ช่อง)</label>
+                        <input type="number" id="num_bays" value="5" min="1" max="40">
+                    </div>
+                    <div class="input-group">
+                        <label title="Max queue size">ความจุคิวรับได้ (คัน)</label>
+                        <input type="number" id="queue_cap" value="999" min="1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simulation Settings -->
+            <div>
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">พารามิเตอร์การจำลอง</h3>
+                <div class="space-y-3">
+                    <div class="input-group">
+                        <label>ระยะเวลาจำลอง (นาที)</label>
+                        <input type="number" id="duration_min" value="60" min="1">
+                    </div>
+                    <div class="input-group">
+                        <label title="เริ่มเก็บข้อมูลสถิติหลังจากเวลานี้">เวลาวอร์มอัพ (นาที)</label>
+                        <input type="number" id="warmup_min" value="10" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label>ค่าสุ่ม (Seed)</label>
+                        <input type="number" id="seed" value="12345">
+                    </div>
+                     <div class="input-group">
+                        <label title="Sampling rate for charts">ความละเอียดกราฟ (วินาที)</label>
+                        <input type="number" id="time_step" value="10" min="1">
+                    </div>
+                    <div class="input-group">
+                        <label title="Number of iterations for batch run">จำนวนรอบรัน (Batch)</label>
+                        <input type="number" id="batch_runs" value="50" min="2" max="1000">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="p-4 border-t border-gray-200 bg-gray-50 space-y-2">
+            <div class="space-y-2">
+                <button onclick="toggleVisualSimulation()" id="btn-visual" class="btn btn-visual w-full flex justify-center items-center">
+                    <span>👁️</span> &nbsp; แสดงภาพจำลองแบบสด
+                </button>
+                <div class="flex items-center space-x-2 px-1">
+                    <span class="text-xs text-gray-500 font-bold whitespace-nowrap" style="min-width: 60px;">ความเร็ว: <span id="speed-label">5x</span></span>
+                    <input type="range" id="speed-slider" min="1" max="50" value="5" class="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600">
+                </div>
+            </div>
+
+            <button onclick="runSingleSimulation()" class="btn btn-primary w-full flex justify-center items-center">
+                <span id="btn-run-icon">▶</span> &nbsp; รันแบบรวดเร็ว (เก็บสถิติ)
+            </button>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="runBatchSimulation()" class="btn btn-secondary text-sm">รันแบบกลุ่ม</button>
+                <button onclick="runScenarioSweep()" class="btn btn-outline text-sm">วิเคราะห์ Lambda</button>
+            </div>
+             <button onclick="exportCSV()" class="btn btn-outline w-full text-sm">ส่งออก CSV</button>
+             <div id="status-msg" class="text-xs text-center text-gray-500 h-4"></div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden">
+        
+        <!-- Metrics Header -->
+        <div class="bg-white border-b border-gray-200 p-4 shadow-sm z-10">
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4" id="metrics-panel">
+                <!-- Metrics inserted by JS -->
+                <div class="text-center p-2 bg-gray-50 rounded">
+                    <div class="text-xs text-gray-500">อัตราการใช้งาน</div>
+                    <div class="text-xl font-bold text-gray-800">-</div>
+                </div>
+                 <div class="text-center p-2 bg-gray-50 rounded">
+                    <div class="text-xs text-gray-500">คิวเฉลี่ย (Lq)</div>
+                    <div class="text-xl font-bold text-gray-800">-</div>
+                </div>
+                 <div class="text-center p-2 bg-gray-50 rounded">
+                    <div class="text-xs text-gray-500">เวลารอเฉลี่ย (Wq)</div>
+                    <div class="text-xl font-bold text-gray-800">-</div>
+                </div>
+                <div class="text-center p-2 bg-gray-50 rounded">
+                    <div class="text-xs text-gray-500">โอกาสเกิดคิว>0</div>
+                    <div class="text-xl font-bold text-gray-800">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scrollable Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+            
+            <!-- MAIN DASHBOARD SPLIT -->
+            <div class="flex flex-col xl:flex-row gap-4">
+                
+                <!-- LEFT: Visualization (Hidden by default) -->
+                <div id="visual-container" class="hidden xl:w-7/12 card p-0 overflow-hidden relative h-[340px]">
+                    <canvas id="visual-canvas" class="w-full h-full bg-gray-800"></canvas>
+                    <div class="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded border border-white/20 backdrop-blur-sm">
+                        จำลองสถานการณ์สด <br> <span id="visual-time">00:00</span>
+                    </div>
+                    <!-- Legend Top-Right -->
+                    <div class="absolute top-2 right-2 text-white text-xs space-x-2 bg-black/30 px-2 py-1 rounded backdrop-blur-sm">
+                        <span class="inline-block w-2 h-2 rounded-full bg-amber-400"></span> กำลังรอ
+                        <span class="inline-block w-2 h-2 rounded-full bg-blue-500"></span> กำลังจอด
+                        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span> กำลังออก
+                    </div>
+                </div>
+
+                <!-- RIGHT: Charts Grid (Expands when visual is hidden) -->
+                <div id="charts-container" class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div class="card h-40 p-2">
+                        <canvas id="chart-system"></canvas>
+                    </div>
+                     <div class="card h-40 p-2">
+                        <canvas id="chart-queue"></canvas>
+                    </div>
+                    <div class="card h-40 p-2">
+                        <canvas id="chart-wait-hist"></canvas>
+                    </div>
+                    <div class="card h-40 p-2">
+                        <canvas id="chart-sweep"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Validation & Interpretation -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="card lg:col-span-2">
+                    <h3 class="text-sm font-bold text-gray-700 mb-2">ตรวจสอบทฤษฎี (เฉพาะระบบ M/M/s)</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100 text-gray-600">
+                                <tr>
+                                    <th class="p-2">ตัวชี้วัด</th>
+                                    <th class="p-2">ผลจำลอง</th>
+                                    <th class="p-2">ทฤษฎี</th>
+                                    <th class="p-2">ต่าง %</th>
+                                    <th class="p-2">สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="validation-table">
+                                <tr><td colspan="5" class="p-2 text-center text-gray-400">รันการจำลองเพื่อดูผลเปรียบเทียบทฤษฎี</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="card bg-blue-50 border border-blue-100">
+                    <h3 class="text-sm font-bold text-blue-800 mb-2">การแปลผล</h3>
+                    <ul class="text-xs text-blue-700 space-y-2 list-disc pl-4">
+                        <li><strong>ตรวจสอบข้อมูล:</strong> กราฟด้านล่างยืนยันรูปแบบสุ่มเวลามาถึง/เวลาจอด ว่าตรงตามทฤษฎี M/M หรือไม่</li>
+                        <li><strong>อัตราการใช้งาน:</strong> % ของเวลาที่ช่องจอดถูกใช้งานจริง</li>
+                        <li><strong>คิวเฉลี่ย (Lq):</strong> จำนวนรถที่รอคิวโดยเฉลี่ย</li>
+                        <li><strong>เวลารอเฉลี่ย (Wq):</strong> เวลาเฉลี่ยที่รถแต่ละคันต้องรอคิว</li>
+                    </ul>
+                    <div id="stability-warning" class="hidden mt-3 p-2 bg-red-100 text-red-700 text-xs font-bold rounded border border-red-200">
+                        ⚠️ ระบบไม่เสถียร (Rho ≥ 1) จำนวนคิวจะเพิ่มขึ้นเรื่อยๆ จนล้น
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Distribution Validation -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="card h-64">
+                    <canvas id="chart-arrival-dist"></canvas>
+                </div>
+                <div class="card h-64">
+                    <canvas id="chart-service-dist"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+<script>
+/**
+ * RANDOM NUMBER GENERATOR (Mulberry32)
+ */
+class Random {
+    constructor(seed) {
+        this.seed = seed;
+    }
+    next() {
+        var t = this.seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
+    exponential(rate) {
+        // Quantile function for Exponential: -ln(1-u) / lambda
+        return -Math.log(1 - this.next()) / rate;
+    }
+}
+
+/**
+ * 1. FAST DISCRETE EVENT SIMULATION (For Stats/Charts)
+ */
+const EVENTS = { ARRIVAL: 0, DEPARTURE: 1 };
+
+class Simulation {
+    constructor(config) {
+        this.cfg = config;
+        this.rng = new Random(config.seed);
+        this.reset();
+    }
+
+    reset() {
+        this.currentTime = 0;
+        this.queue = [];
+        this.serversBusy = 0;
+        this.events = [];
+        this.stats = {
+            arrivals: 0, completed: 0, overflow: 0,
+            totalQueueTimeArea: 0, totalSystemTimeArea: 0, serverBusyTimeArea: 0,
+            totalWaitTime: 0, totalSystemTime: 0, waitCount: 0,
+            zeroQueueTime: 0, maxQueue: 0
+        };
+        // Input validation data
+        this.interArrivalSample = [];
+        this.serviceSample = [];
+        
+        this.timeSeries = [];
+        this.nextSampleTime = 0;
+    }
+
+    schedule(type, time, data) {
+        const event = { type, time, data };
+        let added = false;
+        for (let i = 0; i < this.events.length; i++) {
+            if (this.events[i].time > time) {
+                this.events.splice(i, 0, event);
+                added = true; break;
+            }
+        }
+        if (!added) this.events.push(event);
+    }
+
+    run() {
+        const arrivalRatePerSec = this.cfg.arrivalRate / 3600;
+        const endTime = this.cfg.durationMin * 60;
+        const warmupTime = this.cfg.warmupMin * 60;
+        
+        // Schedule first arrival
+        const firstIA = this.rng.exponential(arrivalRatePerSec);
+        this.interArrivalSample.push(firstIA); // Track inputs
+        this.schedule(EVENTS.ARRIVAL, firstIA);
+
+        while (this.events.length > 0) {
+            const evt = this.events.shift();
+            if (evt.time > endTime) break;
+            const dt = evt.time - this.currentTime;
+            
+            if (this.currentTime >= warmupTime) this.updateTimeWeightedStats(dt);
+            else if (evt.time > warmupTime) this.updateTimeWeightedStats(evt.time - warmupTime);
+
+            while (this.nextSampleTime <= evt.time) {
+                if (this.nextSampleTime >= 0) {
+                    this.timeSeries.push({ t: this.nextSampleTime, q: this.queue.length, sys: this.queue.length + this.serversBusy });
+                }
+                this.nextSampleTime += this.cfg.timeStep;
+            }
+
+            this.currentTime = evt.time;
+
+            if (evt.type === EVENTS.ARRIVAL) this.handleArrival(arrivalRatePerSec);
+            else this.handleDeparture(evt.data);
+        }
+        return this.computeFinalMetrics(warmupTime, endTime);
+    }
+
+    updateTimeWeightedStats(dt) {
+        this.stats.totalQueueTimeArea += this.queue.length * dt;
+        this.stats.totalSystemTimeArea += (this.queue.length + this.serversBusy) * dt;
+        this.stats.serverBusyTimeArea += this.serversBusy * dt;
+        if (this.queue.length === 0) this.stats.zeroQueueTime += dt;
+        if (this.queue.length > this.stats.maxQueue) this.stats.maxQueue = this.queue.length;
+    }
+
+    handleArrival(lambda) {
+        // Generate Next Arrival
+        const ia = this.rng.exponential(lambda);
+        // Store for validation check (cap to avoid memory issues on huge runs)
+        if(this.interArrivalSample.length < 5000) this.interArrivalSample.push(ia);
+        this.schedule(EVENTS.ARRIVAL, this.currentTime + ia);
+        
+        if (this.currentTime >= this.cfg.warmupMin * 60) this.stats.arrivals++;
+
+        if (this.serversBusy < this.cfg.servers) {
+            this.serversBusy++;
+            this.schedule(EVENTS.DEPARTURE, this.currentTime + this.getServiceTime(), { arrivalTime: this.currentTime, startService: this.currentTime });
+        } else {
+            if (this.queue.length < this.cfg.queueCap) this.queue.push(this.currentTime);
+            else if (this.currentTime >= this.cfg.warmupMin * 60) this.stats.overflow++;
+        }
+    }
+
+    handleDeparture(data) {
+        this.serversBusy--;
+        if (this.currentTime >= this.cfg.warmupMin * 60) {
+            const wait = data.startService - data.arrivalTime;
+            this.stats.completed++;
+            this.stats.totalWaitTime += wait;
+            this.stats.totalSystemTime += (this.currentTime - data.arrivalTime);
+            if (wait > 0.001) this.stats.waitCount++;
+        }
+        if (this.queue.length > 0) {
+            const nextArr = this.queue.shift();
+            this.serversBusy++;
+            this.schedule(EVENTS.DEPARTURE, this.currentTime + this.getServiceTime(), { arrivalTime: nextArr, startService: this.currentTime });
+        }
+    }
+
+    getServiceTime() {
+        let st;
+        if (this.cfg.serviceDist === 'fixed') {
+            st = this.cfg.dwellTime;
+        } else {
+            st = this.rng.exponential(1.0 / this.cfg.dwellTime);
+        }
+        // Store for validation check
+        if(this.serviceSample.length < 5000) this.serviceSample.push(st);
+        return st;
+    }
+
+    computeFinalMetrics(warmup, end) {
+        const dur = Math.max(1, end - warmup);
+        return {
+            Lq: this.stats.totalQueueTimeArea / dur,
+            Wq: this.stats.completed > 0 ? this.stats.totalWaitTime / this.stats.completed : 0,
+            utilization: (this.stats.serverBusyTimeArea / dur) / this.cfg.servers,
+            probZeroQueue: this.stats.zeroQueueTime / dur,
+            probWait: this.stats.completed > 0 ? this.stats.waitCount / this.stats.completed : 0,
+            throughput: this.stats.completed / (dur/3600),
+            overflows: this.stats.overflow,
+            timeSeries: this.timeSeries,
+            interArrivalSample: this.interArrivalSample,
+            serviceSample: this.serviceSample
+        };
+    }
+}
+
+/**
+ * 2. REAL-TIME VISUALIZER (Animation Loop)
+ * Handles vehicle movement and visualization on Canvas
+ */
+class VisualSimulation {
+    constructor(canvas, config) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.cfg = config;
+        this.rng = new Random(config.seed);
+        this.vehicles = []; 
+        this.bays = []; 
+        this.queue = []; 
+        
+        this.simTime = 0;
+        this.nextArrival = 0;
+        this.animationId = null;
+        this.lastFrameTime = 0;
+        this.speedFactor = parseInt(document.getElementById('speed-slider').value) || 5; 
+        
+        this.carWidth = 20; 
+        this.carHeight = 12;
+
+        // Real-time Stats Tracking
+        this.rtStats = {
+            totalSamples: 0,
+            samplesQGT0: 0,
+            utilizationCounts: new Array(config.servers + 1).fill(0), // Index = num busy
+            queueCounts: {}, // Map size -> count
+            waitTimes: [], // Array of wait times
+            lastChartUpdate: 0
+        };
+
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+
+        this.initBays();
+        this.initRealTimeCharts(); // Initialize charts immediately
+        this.nextArrival = this.rng.exponential(config.arrivalRate / 3600);
+    }
+
+    initBays() {
+        const s = this.cfg.servers;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+        
+        const roadH = 60;
+        const bayMargin = 5;
+        const availW = w - 40;
+        let bayW = (availW / s) - bayMargin;
+        if(bayW > 60) bayW = 60;
+        
+        this.carWidth = Math.max(5, Math.min(20, bayW - 4));
+        
+        const startX = (w - (s * (bayW + bayMargin))) / 2;
+        const bayY = h - roadH - 80;
+
+        for(let i=0; i<s; i++) {
+            this.bays.push({
+                id: i,
+                x: startX + i * (bayW + bayMargin),
+                y: bayY,
+                w: bayW,
+                h: 50,
+                occupiedBy: null
+            });
+        }
+    }
+
+    initRealTimeCharts() {
+        // Explicitly destroy existing charts on these canvases to avoid conflicts
+        const canvasIds = ['chart-system', 'chart-queue', 'chart-wait-hist', 'chart-sweep'];
+        canvasIds.forEach(id => {
+            const chart = Chart.getChart(id);
+            if (chart) chart.destroy();
+        });
+
+        // 1. Utilization Histogram (Replaces chart-system)
+        const ctxUtil = document.getElementById('chart-system').getContext('2d');
+        charts['rt-util'] = new Chart(ctxUtil, {
+            type: 'bar',
+            data: {
+                labels: Array.from({length: this.cfg.servers + 1}, (_, i) => i.toString()),
+                datasets: [{
+                    label: 'ความถี่ของช่องจอดที่ถูกใช้',
+                    data: new Array(this.cfg.servers + 1).fill(0),
+                    backgroundColor: '#059669'
+                }]
+            },
+            options: { 
+                responsive: true, maintainAspectRatio: false, animation: false,
+                plugins: { title: { display: true, text: 'อัตราการใช้งานแบบเรียลไทม์' } }
+            }
+        });
+
+        // 2. Queue Length Histogram (Replaces chart-queue)
+        const ctxQueue = document.getElementById('chart-queue').getContext('2d');
+        charts['rt-queue'] = new Chart(ctxQueue, {
+            type: 'bar',
+            data: {
+                labels: ['0', '1', '2', '3', '4', '5+'],
+                datasets: [{
+                    label: 'ความถี่ความยาวคิว',
+                    data: [0,0,0,0,0,0],
+                    backgroundColor: '#2563eb'
+                }]
+            },
+            options: { 
+                responsive: true, maintainAspectRatio: false, animation: false,
+                plugins: { title: { display: true, text: 'การกระจายความยาวคิวแบบเรียลไทม์' } }
+            }
+        });
+
+        // 3. Wait Time Histogram (Replaces chart-wait-hist)
+        const ctxWait = document.getElementById('chart-wait-hist').getContext('2d');
+        charts['rt-wait'] = new Chart(ctxWait, {
+            type: 'bar',
+            data: {
+                labels: ['0-10s', '10-30s', '30-60s', '60s+'],
+                datasets: [{
+                    label: 'จำนวนเวลารอ',
+                    data: [0,0,0,0],
+                    backgroundColor: '#7c3aed'
+                }]
+            },
+            options: { 
+                responsive: true, maintainAspectRatio: false, animation: false,
+                plugins: { title: { display: true, text: 'การกระจายเวลารอแบบเรียลไทม์' } }
+            }
+        });
+
+        // 4. Prob(Q > 0) (Replaces chart-sweep)
+        const ctxProb = document.getElementById('chart-sweep').getContext('2d');
+        charts['rt-prob'] = new Chart(ctxProb, {
+            type: 'doughnut',
+            data: {
+                labels: ['คิวว่าง (P=0)', 'มีคิว (P>0)'],
+                datasets: [{
+                    data: [1, 0], // Start with all empty
+                    backgroundColor: ['#e5e7eb', '#db2777']
+                }]
+            },
+            options: { 
+                responsive: true, maintainAspectRatio: false, animation: false,
+                plugins: { title: { display: true, text: 'กิจกรรมคิว (โอกาสที่คิว > 0)' } }
+            }
+        });
+    }
+
+    start() {
+        if(this.animationId) cancelAnimationFrame(this.animationId);
+        this.lastFrameTime = performance.now();
+        this.loop();
+    }
+
+    stop() {
+        if(this.animationId) cancelAnimationFrame(this.animationId);
+        this.animationId = null;
+    }
+
+    loop() {
+        const now = performance.now();
+        const delta = (now - this.lastFrameTime) / 1000;
+        this.lastFrameTime = now;
+        
+        const simDelta = delta * this.speedFactor;
+        this.simTime += simDelta;
+        
+        this.update(simDelta);
+        this.draw();
+        this.sampleStats(simDelta); // Sample statistics
+
+        // Update charts every 500ms real time
+        if (now - this.rtStats.lastChartUpdate > 500) {
+            this.updateRealTimeCharts();
+            this.rtStats.lastChartUpdate = now;
+        }
+        
+        this.animationId = requestAnimationFrame(() => this.loop());
+        
+        const mins = Math.floor(this.simTime / 60);
+        const secs = Math.floor(this.simTime % 60);
+        document.getElementById('visual-time').innerText = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+    }
+
+    sampleStats(dt) {
+        this.rtStats.totalSamples++;
+        
+        // 1. Utilization
+        const busy = this.bays.filter(b => b.occupiedBy).length;
+        this.rtStats.utilizationCounts[busy]++;
+        
+        // 2. Queue
+        const qLen = this.queue.length;
+        if(qLen > 0) this.rtStats.samplesQGT0++;
+        
+        if (!this.rtStats.queueCounts[qLen]) this.rtStats.queueCounts[qLen] = 0;
+        this.rtStats.queueCounts[qLen]++;
+    }
+
+    updateRealTimeCharts() {
+        if (!charts['rt-util']) return;
+
+        // 1. Utilization Update
+        charts['rt-util'].data.datasets[0].data = this.rtStats.utilizationCounts;
+        charts['rt-util'].update('none');
+
+        // 2. Queue Update
+        // Bucket the queue counts into 0, 1, 2, 3, 4, 5+
+        const qData = [0,0,0,0,0,0];
+        Object.keys(this.rtStats.queueCounts).forEach(k => {
+            const idx = parseInt(k);
+            if (idx >= 5) qData[5] += this.rtStats.queueCounts[k];
+            else qData[idx] += this.rtStats.queueCounts[k];
+        });
+        charts['rt-queue'].data.datasets[0].data = qData;
+        charts['rt-queue'].update('none');
+
+        // 3. Wait Time Update
+        // Bin wait times: 0-10, 10-30, 30-60, 60+
+        const wData = [0,0,0,0];
+        this.rtStats.waitTimes.forEach(w => {
+            if (w < 10) wData[0]++;
+            else if (w < 30) wData[1]++;
+            else if (w < 60) wData[2]++;
+            else wData[3]++;
+        });
+        charts['rt-wait'].data.datasets[0].data = wData;
+        charts['rt-wait'].update('none');
+
+        // 4. Prob(Q>0) Update
+        const pActive = this.rtStats.samplesQGT0;
+        const pEmpty = this.rtStats.totalSamples - pActive;
+        charts['rt-prob'].data.datasets[0].data = [pEmpty, pActive];
+        charts['rt-prob'].update('none');
+    }
+
+    // Helper to start a smooth move
+    setTarget(v, x, y, duration) {
+        // Only reset animation if target changes significantly
+        if (Math.abs(v.targetX - x) > 1 || Math.abs(v.targetY - y) > 1) {
+            v.startX = v.x;
+            v.startY = v.y;
+            v.targetX = x;
+            v.targetY = y;
+            v.moveDuration = duration || 1.0; // sim seconds
+            v.startMoveTime = this.simTime;
+        }
+    }
+
+    update(dt) {
+        // 1. Generate Arrivals
+        if(this.simTime >= this.nextArrival) {
+            this.spawnVehicle();
+            const rate = this.cfg.arrivalRate / 3600;
+            this.nextArrival = this.simTime + this.rng.exponential(rate);
+        }
+
+        // 2. Logic: Move Queue to Bay
+        if(this.queue.length > 0) {
+            const freeBay = this.bays.find(b => b.occupiedBy === null);
+            if(freeBay) {
+                const veh = this.queue.shift();
+                this.updateQueuePositions(); 
+                
+                // Track Wait Time
+                const waitTime = this.simTime - veh.queueStartTime;
+                this.rtStats.waitTimes.push(waitTime);
+
+                veh.state = 'MOVING_TO_BAY';
+                
+                const tx = freeBay.x + (freeBay.w - this.carWidth) / 2;
+                const ty = freeBay.y + (freeBay.h - this.carHeight) / 2;
+                
+                this.setTarget(veh, tx, ty, 2.0); // 2 sim seconds to park
+                
+                veh.bayId = freeBay.id;
+                freeBay.occupiedBy = veh; 
+                
+                const svcTime = this.cfg.serviceDist === 'fixed' ? this.cfg.dwellTime : this.rng.exponential(1.0/this.cfg.dwellTime);
+                veh.dwellDuration = svcTime; 
+            }
+        }
+
+        // 3. Update Vehicles
+        for(let i = this.vehicles.length - 1; i >= 0; i--) {
+            const v = this.vehicles[i];
+            
+            // Calculate Tween Progress
+            let progress = 0;
+            if (v.moveDuration > 0) {
+                progress = (this.simTime - v.startMoveTime) / v.moveDuration;
+            } else {
+                progress = 1;
+            }
+
+            if (progress >= 1) {
+                // Arrived
+                v.x = v.targetX;
+                v.y = v.targetY;
+
+                if(v.state === 'SPAWNING') {
+                    v.state = 'QUEUED';
+                    this.updateQueuePositions();
+                } else if (v.state === 'MOVING_TO_BAY') {
+                    v.state = 'DWELLING';
+                    v.serviceEnd = this.simTime + v.dwellDuration;
+                } else if (v.state === 'EXITING') {
+                    // Fully left
+                    const bay = this.bays.find(b => b.id === v.bayId);
+                    if (bay && bay.occupiedBy === v) bay.occupiedBy = null;
+                    this.vehicles.splice(i, 1);
+                    continue; // Skip rest of loop
+                }
+            } else {
+                // Interpolate (Ease In Out Quad)
+                const t = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+                v.x = v.startX + (v.targetX - v.startX) * t;
+                v.y = v.startY + (v.targetY - v.startY) * t;
+
+                // Clearance Check for EXITING vehicles
+                if (v.state === 'EXITING') {
+                    const bay = this.bays.find(b => b.id === v.bayId);
+                    if (bay && bay.occupiedBy === v) {
+                        // AABB Check
+                        const carRect = { l: v.x, r: v.x + this.carWidth, t: v.y, b: v.y + this.carHeight };
+                        const bayRect = { l: bay.x, r: bay.x + bay.w, t: bay.y, b: bay.y + bay.h };
+                        
+                        const isOverlapping = (carRect.l < bayRect.r && carRect.r > bayRect.l &&
+                                               carRect.t < bayRect.b && carRect.b > bayRect.t);
+
+                        if (!isOverlapping) {
+                            bay.occupiedBy = null; 
+                        }
+                    }
+                }
+            }
+
+            // Dwell Logic
+            if(v.state === 'DWELLING') {
+                // Force Center
+                const bay = this.bays.find(b => b.id === v.bayId);
+                if(bay) {
+                     v.x = bay.x + (bay.w - this.carWidth) / 2;
+                     v.y = bay.y + (bay.h - this.carHeight) / 2;
+                }
+
+                if(v.serviceEnd && this.simTime >= v.serviceEnd) {
+                    v.state = 'EXITING';
+                    const exitX = this.canvas.width + 50;
+                    const exitY = this.canvas.height - 30;
+                    // Calculate duration based on distance to keep speed roughly constant or fixed time
+                    // Fixed time is smoother for animation flow
+                    this.setTarget(v, exitX, exitY, 2.0); 
+                }
+            }
+        }
+    }
+
+    spawnVehicle() {
+        const v = {
+            id: Math.random(),
+            x: -40,
+            y: this.canvas.height - 40,
+            startX: -40,
+            startY: this.canvas.height - 40,
+            targetX: -40, // Will be updated by updateQueuePositions
+            targetY: this.canvas.height - 40,
+            startMoveTime: this.simTime,
+            moveDuration: 0,
+            state: 'SPAWNING',
+            queueStartTime: this.simTime, // Track start time for wait calc
+            bayId: -1,
+            color: '#fbbf24' 
+        };
+        
+        this.queue.push(v);
+        this.vehicles.push(v);
+        this.updateQueuePositions();
+    }
+
+    updateQueuePositions() {
+        const queueStartX = 20;
+        const gap = this.carWidth + 8; // Slightly larger gap
+        
+        const firstBayX = this.bays[0] ? this.bays[0].x : 100;
+        const safeWidth = Math.max(50, firstBayX - 40); 
+        const maxPerLine = Math.floor(safeWidth / gap);
+        const effectiveMaxPerLine = Math.max(1, maxPerLine);
+        const MAX_VISUAL_QUEUE = 25;
+
+        this.queue.forEach((v, idx) => {
+            if (idx >= MAX_VISUAL_QUEUE) {
+                // If capped, just set target offscreen
+                this.setTarget(v, -100, this.canvas.height - 40, 0.5);
+                return;
+            }
+
+            if(v.state === 'SPAWNING' || v.state === 'QUEUED') {
+                const line = Math.floor(idx / effectiveMaxPerLine);
+                const posInLine = idx % effectiveMaxPerLine;
+
+                const tx = queueStartX + (posInLine * gap);
+                const ty = this.canvas.height - 40 - (line * 18);
+                
+                // If just spawning, set target immediately
+                if (v.state === 'SPAWNING' && v.targetX === -40) {
+                     this.setTarget(v, tx, ty, 1.0); // 1s to enter queue
+                } else {
+                    // Shuffle in queue (faster)
+                     this.setTarget(v, tx, ty, 0.5); 
+                }
+            }
+        });
+    }
+
+    draw() {
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        // 1. Background (Gradient)
+        const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+        bgGrad.addColorStop(0, '#0f172a'); // Slate 900
+        bgGrad.addColorStop(1, '#1e1b4b'); // Indigo 950
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0,0,w,h);
+
+        // 2. Road
+        ctx.fillStyle = '#1e293b'; // Slate 800
+        ctx.fillRect(0, h - 60, w, 60);
+        
+        // Road Markings
+        ctx.strokeStyle = '#fbbf24'; // Amber 400
+        ctx.lineWidth = 2;
+        ctx.setLineDash([20, 30]);
+        ctx.beginPath();
+        ctx.moveTo(0, h-30);
+        ctx.lineTo(w, h-30);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // Road Border (Top)
+        ctx.beginPath();
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 1;
+        ctx.moveTo(0, h-60);
+        ctx.lineTo(w, h-60);
+        ctx.stroke();
+
+        // 3. Bays
+        this.bays.forEach(b => {
+            // Bay Glow/Fill
+            if (b.occupiedBy) {
+                 ctx.fillStyle = 'rgba(99, 102, 241, 0.2)'; // Indigo 500 low opacity
+                 ctx.shadowColor = '#6366f1';
+                 ctx.shadowBlur = 10;
+            } else {
+                 ctx.fillStyle = 'rgba(30, 41, 59, 0.5)'; // Slate 800
+                 ctx.shadowBlur = 0;
+            }
+            
+            // Draw Rounded Rect for Bay
+            this.roundRect(ctx, b.x, b.y, b.w, b.h, 5, true, false);
+            ctx.shadowBlur = 0; // Reset
+            
+            // Bay Border
+            ctx.strokeStyle = b.occupiedBy ? '#818cf8' : '#475569';
+            ctx.lineWidth = 2;
+            this.roundRect(ctx, b.x, b.y, b.w, b.h, 5, false, true);
+            
+            // Label
+            ctx.fillStyle = '#94a3b8'; // Slate 400
+            ctx.font = '10px sans-serif';
+            const text = `B${b.id+1}`;
+            const textW = ctx.measureText(text).width;
+            ctx.fillText(text, b.x + (b.w - textW)/2, b.y - 6);
+        });
+
+        // 4. Vehicles
+        this.vehicles.forEach(v => {
+            if (v.x < -30) return;
+
+            // Gradient based on state
+            let grad = ctx.createLinearGradient(v.x, v.y, v.x + this.carWidth, v.y + this.carHeight);
+            
+            if(v.state === 'MOVING_TO_BAY') {
+                 // Moving: Cyan/Blue
+                 grad.addColorStop(0, '#22d3ee'); 
+                 grad.addColorStop(1, '#0ea5e9');
+            } else if(v.state === 'DWELLING') {
+                 // Parked: Violet/Purple
+                 grad.addColorStop(0, '#c084fc'); 
+                 grad.addColorStop(1, '#7c3aed');
+            } else if(v.state === 'EXITING') {
+                 // Exiting: Emerald/Teal
+                 grad.addColorStop(0, '#34d399'); 
+                 grad.addColorStop(1, '#059669');
+            } else {
+                 // Queue: Amber/Orange
+                 grad.addColorStop(0, '#fbbf24'); 
+                 grad.addColorStop(1, '#d97706');
+            }
+            
+            ctx.fillStyle = grad;
+            
+            // Draw Car Body (Rounded)
+            this.roundRect(ctx, v.x, v.y, this.carWidth, this.carHeight, 3, true, false);
+            
+            // Roof / Details
+            if (this.carWidth > 8) {
+                ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                const roofW = this.carWidth * 0.5;
+                const roofX = v.x + (this.carWidth - roofW)/2;
+                ctx.fillRect(roofX, v.y + 2, roofW, this.carHeight - 4);
+            }
+            
+            // Headlights (Yellow dots) if moving right
+            if (v.state !== 'DWELLING') {
+                 ctx.fillStyle = '#fef08a'; // Yellow 200
+                 ctx.beginPath();
+                 ctx.arc(v.x + this.carWidth - 1, v.y + 3, 1.5, 0, Math.PI*2);
+                 ctx.arc(v.x + this.carWidth - 1, v.y + this.carHeight - 3, 1.5, 0, Math.PI*2);
+                 ctx.fill();
+            }
+        });
+
+        // 5. Queue Stats
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = '12px sans-serif';
+        ctx.fillText(`จำนวนรถรอคิว: ${this.queue.length}${this.queue.length > 25 ? ' (เกินกว่าภาพจะแสดงได้)' : ''}`, 10, h - 70);
+    }
+    
+    // Helper for rounded rectangles
+    roundRect(ctx, x, y, w, h, r, fill, stroke) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+        if (fill) ctx.fill();
+        if (stroke) ctx.stroke();
+    }
+}
+
+
+/**
+ * UI CONTROLLERS & SHARED LOGIC
+ */
+let charts = {};
+let lastResults = null;
+let visualSim = null;
+
+function getConfig() {
+    return {
+        arrivalRate: parseFloat(document.getElementById('arrival_rate').value),
+        dwellTime: parseFloat(document.getElementById('dwell_time').value),
+        serviceDist: document.getElementById('service_dist').value,
+        servers: parseInt(document.getElementById('num_bays').value),
+        queueCap: parseInt(document.getElementById('queue_cap').value),
+        durationMin: parseFloat(document.getElementById('duration_min').value),
+        warmupMin: parseFloat(document.getElementById('warmup_min').value),
+        seed: parseInt(document.getElementById('seed').value),
+        timeStep: parseFloat(document.getElementById('time_step').value)
+    };
+}
+
+// ---- VISUAL SIMULATION CONTROL ----
+function toggleVisualSimulation() {
+    const visualWrapper = document.getElementById('visual-container');
+    const btn = document.getElementById('btn-visual');
+    const isVisible = !visualWrapper.classList.contains('hidden');
+
+    if (isVisible) {
+        // Stop
+        if (visualSim) visualSim.stop();
+        visualWrapper.classList.add('hidden');
+        btn.innerHTML = '<span>👁️</span> &nbsp; แสดงภาพจำลองแบบสด';
+        btn.classList.remove('bg-red-600', 'hover:bg-red-700');
+        btn.classList.add('btn-visual');
+    } else {
+        // Start
+        visualWrapper.classList.remove('hidden');
+        btn.innerHTML = '<span>⏹</span> &nbsp; หยุดภาพจำลองแบบสด';
+        btn.classList.remove('btn-visual');
+        btn.classList.add('bg-red-600', 'hover:bg-red-700');
+        
+        // Init logic
+        const config = getConfig();
+        const canvas = document.getElementById('visual-canvas');
+        if(visualSim) visualSim.stop();
+        visualSim = new VisualSimulation(canvas, config);
+        visualSim.start();
+    }
+}
+
+// Add Speed Slider Listener
+document.getElementById('speed-slider').addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    document.getElementById('speed-label').innerText = val + 'x';
+    if(visualSim) visualSim.speedFactor = val;
+});
+
+// ---- FAST STATS SIMULATION ----
+function runSingleSimulation() {
+    updateStatus("กำลังจำลอง...");
+    setTimeout(() => {
+        const config = getConfig();
+        const sim = new Simulation(config);
+        const results = sim.run();
+        lastResults = results;
+        
+        renderMetrics(results);
+        renderValidation(results, config);
+        renderCharts(results);
+        updateStatus("การจำลองเสร็จสมบูรณ์");
+    }, 10);
+}
+
+function runBatchSimulation() {
+    const iterations = parseInt(document.getElementById('batch_runs').value) || 50;
+    updateStatus(`กำลังรันแบบกลุ่ม (${iterations})...`);
+    setTimeout(() => {
+        const config = getConfig();
+        let agg = { Lq: 0, Wq: 0, util: 0, probZero: 0, probWait: 0 }; 
+        for(let i=0; i<iterations; i++) {
+            config.seed = config.seed + i; 
+            const sim = new Simulation(config);
+            const res = sim.run();
+            agg.Lq += res.Lq; 
+            agg.Wq += res.Wq; 
+            agg.util += res.utilization; 
+            agg.probZero += res.probZeroQueue;
+            agg.probWait += res.probWait; // Aggregating probWait
+        }
+        const avg = {
+            Lq: agg.Lq / iterations, 
+            Wq: agg.Wq / iterations,
+            utilization: agg.util / iterations, 
+            probZeroQueue: agg.probZero / iterations,
+            probWait: agg.probWait / iterations, // Calculating average probWait
+            throughput: "-", overflows: "-"
+        };
+        renderMetrics(avg);
+        renderValidation(avg, config); 
+        clearCharts();
+        updateStatus(`รันแบบกลุ่มเสร็จสิ้น (${iterations} รอบ)`);
+    }, 50);
+}
+
+function runScenarioSweep() {
+    updateStatus("กำลังวิเคราะห์ Sweep...");
+    setTimeout(() => {
+        const config = getConfig();
+        const baseLambda = config.arrivalRate;
+        const steps = 10;
+        const maxLambda = baseLambda * 2;
+        const dataPoints = [];
+
+        for(let i=0; i<=steps; i++) {
+            let lambda = (maxLambda / steps) * i;
+            if (lambda === 0) lambda = 10;
+            config.arrivalRate = lambda;
+            config.seed = 12345;
+            const sim = new Simulation(config);
+            const res = sim.run();
+            dataPoints.push({ x: lambda, y: res.Wq });
+        }
+        renderSweepChart(dataPoints);
+        config.arrivalRate = baseLambda; 
+        updateStatus("วิเคราะห์ Sweep เสร็จสิ้น");
+    }, 50);
+}
+
+function updateStatus(msg) {
+    const el = document.getElementById('status-msg');
+    el.innerHTML = msg ? `<span class="loader"></span> ${msg}` : '';
+    if(msg && !msg.includes('กำลัง')) setTimeout(() => el.innerText = msg, 500);
+}
+
+// ---- THEORETICAL CALCS ----
+function factorial(n) { return n === 0 ? 1 : n * factorial(n-1); }
+function calculateTheory(lambda, mu, s) {
+    const rho = lambda / (s * mu);
+    const intensity = lambda / mu;
+    if (rho >= 1) return { rho, stable: false };
+
+    let sum = 0;
+    for (let i = 0; i < s; i++) sum += Math.pow(intensity, i) / factorial(i);
+    const termS = (Math.pow(intensity, s) / factorial(s)) * (1 / (1 - rho));
+    const P0 = 1 / (sum + termS);
+    const Lq = (P0 * Math.pow(intensity, s) * rho) / (factorial(s) * Math.pow(1 - rho, 2));
+    
+    return { rho, stable: true, P0, Pw: termS * P0, Lq, Wq: Lq / lambda, utilization: rho };
+}
+
+// ---- CHART HELPERS ----
+function calculateHistogram(data, binSize, maxVal, lambda, count) {
+    if(!data || data.length === 0) return { labels: [], counts: [], theory: [] };
+    
+    const max = maxVal || Math.max(...data);
+    const bins = Math.ceil(max / binSize) + 1;
+    const labels = [];
+    const counts = new Array(bins).fill(0);
+    const theory = [];
+
+    // Bin Data
+    data.forEach(v => {
+        const bin = Math.floor(v / binSize);
+        if(bin < bins) counts[bin]++;
+    });
+
+    // Generate Labels and Theoretical Curve
+    for(let i=0; i<bins; i++) {
+        const x = i * binSize;
+        labels.push(x.toFixed(1));
+        
+        // Theoretical Exponential PDF: lambda * e^(-lambda * x)
+        // Expected count = N * PDF(x) * binWidth
+        if(lambda) {
+            // Using midpoint for better fit
+            const mid = x + binSize/2;
+            const prob = lambda * Math.exp(-lambda * mid);
+            theory.push(prob * binSize * count);
+        }
+    }
+    return { labels, counts, theory };
+}
+
+function renderDistributionCharts(res, config) {
+    const lambda = config.arrivalRate / 3600; // rate per sec
+    const mu = 1.0 / config.dwellTime; // rate per sec
+    
+    // Inter-Arrivals
+    const iaData = calculateHistogram(res.interArrivalSample, 2, 60, lambda, res.interArrivalSample.length);
+    createMixedChart('chart-arrival-dist', iaData, 'เวลาการมาถึง (วินาที)', 'จำนวนครั้ง', 'ผลจำลอง', 'ทฤษฎี (Exp)');
+
+    // Service Times
+    // Note: if fixed distribution, theory is a spike, but calculating exp curve anyway if exponential selected
+    const svcDist = config.serviceDist === 'exponential' ? mu : null;
+    const svcData = calculateHistogram(res.serviceSample, 2, config.dwellTime * 4, svcDist, res.serviceSample.length);
+    createMixedChart('chart-service-dist', svcData, 'เวลาให้บริการ (วินาที)', 'จำนวนครั้ง', 'ผลจำลอง', 'ทฤษฎี (Exp)');
+}
+
+function createMixedChart(id, data, xLabel, yLabel, barLabel, lineLabel) {
+    const existing = Chart.getChart(id);
+    if (existing) existing.destroy();
+
+    const ctx = document.getElementById(id).getContext('2d');
+    
+    charts[id] = new Chart(ctx, {
+        data: {
+            labels: data.labels,
+            datasets: [
+                {
+                    type: 'line',
+                    label: lineLabel,
+                    data: data.theory,
+                    borderColor: '#dc2626',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.4
+                },
+                {
+                    type: 'bar',
+                    label: barLabel,
+                    data: data.counts,
+                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                    barPercentage: 1.0,
+                    categoryPercentage: 1.0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { title: { display: true, text: xLabel } },
+            scales: {
+                x: { title: { display: true, text: xLabel } },
+                y: { title: { display: true, text: yLabel }, beginAtZero: true }
+            }
+        }
+    });
+}
+
+function renderMetrics(res) {
+    const panel = document.getElementById('metrics-panel');
+    const cards = [
+        { label: "อัตราการใช้งาน", val: (res.utilization * 100).toFixed(1) + "%", color: res.utilization > 0.95 ? "text-red-600" : "text-gray-800" },
+        { label: "คิวเฉลี่ย (Lq)", val: res.Lq.toFixed(2), unit: "คัน" },
+        { label: "เวลารอเฉลี่ย (Wq)", val: res.Wq.toFixed(1), unit: "วิ" },
+        { label: "โอกาสเกิดคิว>0", val: (res.probZeroQueue * 100).toFixed(1) + "%" },
+        { label: "ปริมาณรถที่ระบายได้", val: typeof res.throughput === 'number' ? Math.round(res.throughput) : res.throughput, unit: "คัน/ชม." },
+        { label: "รถล้นคิว", val: res.overflows, color: res.overflows > 0 ? "text-red-600" : "text-gray-800" }
+    ];
+    panel.innerHTML = cards.map(c => `
+        <div class="text-center p-3 bg-gray-50 rounded border border-gray-100">
+            <div class="text-xs text-gray-500 uppercase tracking-wide">${c.label}</div>
+            <div class="text-xl font-bold ${c.color || 'text-gray-800'}">${c.val} <span class="text-xs font-normal text-gray-400">${c.unit || ''}</span></div>
+        </div>
+    `).join('');
+}
+
+function renderValidation(res, cfg) {
+    const table = document.getElementById('validation-table');
+    const warning = document.getElementById('stability-warning');
+    const lambda = cfg.arrivalRate / 3600;
+    const mu = 1 / cfg.dwellTime;
+    const rho = lambda / (cfg.servers * mu);
+    
+    warning.classList.toggle('hidden', rho < 1);
+
+    if (cfg.serviceDist !== 'exponential') {
+        table.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500 italic">การตรวจสอบทฤษฎีมีให้เฉพาะ M/M/s (แบบเอกซ์โพเนนเชียล)</td></tr>`;
+        return;
+    }
+    const theory = calculateTheory(lambda, mu, cfg.servers);
+    if (!theory.stable) {
+        table.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500 font-bold">ระบบไม่เสถียร (Rho = ${theory.rho.toFixed(2)} ≥ 1) จำนวนคิวจะเพิ่มขึ้นเรื่อยๆ</td></tr>`;
+        return;
+    }
+    const rows = [
+        { name: "คิวเฉลี่ย (Lq)", sim: res.Lq, theo: theory.Lq },
+        { name: "เวลารอเฉลี่ย (Wq)", sim: res.Wq, theo: theory.Wq },
+        { name: "อัตราการใช้งาน", sim: res.utilization, theo: theory.utilization },
+        { name: "โอกาสต้องรอ", sim: res.probWait, theo: theory.Pw }
+    ];
+    table.innerHTML = rows.map(r => {
+        const simVal = (typeof r.sim === 'number') ? r.sim : 0;
+        const theoVal = (typeof r.theo === 'number') ? r.theo : 0;
+        let diff = 0;
+        if (theoVal !== 0) {
+             diff = Math.abs((simVal - theoVal) / theoVal) * 100;
+        }
+
+        const color = diff < 5 ? "text-green-600" : (diff < 15 ? "text-yellow-600" : "text-red-600");
+        return `<tr class="border-b border-gray-100 hover:bg-gray-50">
+            <td class="p-2 font-medium text-gray-700">${r.name}</td>
+            <td class="p-2 text-gray-800">${simVal.toFixed(3)}</td>
+            <td class="p-2 text-gray-500">${theoVal.toFixed(3)}</td>
+            <td class="p-2 ${color} font-bold">${diff.toFixed(1)}%</td>
+            <td class="p-2 text-xs">${diff < 5 ? '✅ ดี' : '⚠️ เบี่ยงเบน'}</td>
+        </tr>`;
+    }).join('');
+}
+
+function renderCharts(res) {
+    // Render Distributions first
+    const config = getConfig();
+    renderDistributionCharts(res, config);
+
+    if (!res.timeSeries) return;
+    const labels = res.timeSeries.map(d => (d.t/60).toFixed(1));
+    const dataQ = res.timeSeries.map(d => d.q);
+    const dataSys = res.timeSeries.map(d => d.sys);
+
+    createChart('chart-queue', 'line', {
+        labels: labels,
+        datasets: [{ label: 'ความยาวคิว', data: dataQ, borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true, tension: 0.3, pointRadius: 0 }]
+    }, 'เวลา (นาที)', 'จำนวนรถ');
+
+    createChart('chart-system', 'line', {
+        labels: labels,
+        datasets: [{ label: 'จำนวนรถทั้งหมดในระบบ', data: dataSys, borderColor: '#059669', borderWidth: 1, pointRadius: 0 }]
+    }, 'เวลา (นาที)', 'จำนวนรถ');
+
+    const ctxSweep = document.getElementById('chart-sweep');
+    if(Chart.getChart(ctxSweep)) Chart.getChart(ctxSweep).destroy();
+    ctxSweep.parentElement.innerHTML = '<canvas id="chart-sweep"></canvas><div class="text-center text-xs text-gray-400 mt-[-50%]">รันวิเคราะห์ Lambda เพื่อดูผล</div>';
+    
+    const ctxHist = document.getElementById('chart-wait-hist').getContext('2d');
+    if(Chart.getChart(ctxHist)) Chart.getChart(ctxHist).destroy();
+    
+    charts['hist'] = new Chart(ctxHist, {
+        type: 'bar',
+        data: { labels: ['เวลารอเฉลี่ย'], datasets: [{ label: 'เวลารอเฉลี่ย (วินาที)', data: [res.Wq], backgroundColor: '#7c3aed' }] },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+}
+
+function renderSweepChart(data) {
+    createChart('chart-sweep', 'line', {
+        labels: data.map(d => d.x.toFixed(0)),
+        datasets: [{ label: 'เวลารอเฉลี่ยเทียบอัตราการมาถึง', data: data.map(d => d.y), borderColor: '#db2777', backgroundColor: 'rgba(219, 39, 119, 0.1)', fill: true }]
+    }, 'อัตราการมาถึง (คัน/ชม.)', 'เวลารอเฉลี่ย (วินาที)');
+}
+
+function createChart(id, type, data, xLabel, yLabel) {
+    // FIX: Check for any existing chart instance on this canvas ID and destroy it
+    const existing = Chart.getChart(id);
+    if (existing) existing.destroy();
+
+    const ctx = document.getElementById(id).getContext('2d');
+    charts[id] = new Chart(ctx, {
+        type: type, data: data,
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { display: true }, tooltip: { enabled: true } },
+            scales: { x: { title: { display: true, text: xLabel } }, y: { title: { display: true, text: yLabel }, beginAtZero: true } }
+        }
+    });
+}
+
+function clearCharts() { Object.keys(charts).forEach(k => charts[k].destroy()); }
+function exportCSV() {
+    if (!lastResults || !lastResults.timeSeries) { alert("กรุณารันการจำลองก่อนครับ"); return; }
+    let csvContent = "data:text/csv;charset=utf-8,Time_Min,Queue_Length,System_Count\n";
+    lastResults.timeSeries.forEach(row => csvContent += `${(row.t/60).toFixed(4)},${row.q},${row.sys}\n`);
+    const link = document.createElement("a");
+    link.href = encodeURI(csvContent);
+    link.download = "parking_simulation_results.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+</body>
+</html>
