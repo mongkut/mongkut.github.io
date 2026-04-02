@@ -59,6 +59,7 @@ const mx=Math.max(...R.map(r=>r.total_flow));
 let ft=[...R],sk='rank',sa=true,sel=null;
 const mp=L.map('map').setView([13.75,100.52],11);
 const tiles={
+  'OSM Standard':L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}),
   'CartoDB Light':L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',{subdomains:'abcd',maxZoom:19}),
   'CartoDB Dark':L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',{subdomains:'abcd',maxZoom:19}),
   'CartoDB Voyager':L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',{subdomains:'abcd',maxZoom:19}),
